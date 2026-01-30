@@ -1,0 +1,4 @@
+# Display a hello message box
+Add-Type -AssemblyName System.Windows.Forms
+
+[System.Windows.Forms.MessageBox]::Show("hi", "Hello", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
